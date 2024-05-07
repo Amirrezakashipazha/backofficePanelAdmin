@@ -29,20 +29,40 @@ import {
 
 const router = Router();
 
-router.get("/api/category",isAdmin, async (req, res) => {
-  const limit = req.query.limit;
-  const page = req.query.page || 1;
+router.get("/api/category",
+ isAdmin,
+  async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const page = parseInt(req.query.page) || 1;
+  const filter = req.query.filter;
+  const value = req.query.value;
   const offset = (page - 1) * limit;
+  const validFilters = ['id', 'name', 'description', 'status']; // Columns in categories table
 
-  const getcategoriesQuery = `${querySchema.table.categories.get} LIMIT ? OFFSET ?`;
-  const countcategoriesQuery = `SELECT COUNT(*) AS count FROM categories`;
+  // Check if the filter is valid
+  if (filter && !validFilters.includes(filter)) {
+    return res.status(400).send({ error: "Invalid filter parameter" });
+  }
+
+  // Build query condition with exact match for id and status, LIKE for others
+  let queryCondition = '';
+  let isExactMatch;
+  if (filter && value) {
+     isExactMatch = ['id', 'status'].includes(filter); // Exact match for id and status
+    queryCondition = ` WHERE ${filter} ${isExactMatch ? '=' : 'LIKE'} ?`;
+  }
+
+  const getCategoriesQuery = `SELECT * FROM categories${queryCondition} LIMIT ? OFFSET ?`;
+  const countCategoriesQuery = `SELECT COUNT(*) AS count FROM categories${queryCondition}`;
 
   try {
+    // Prepare query parameters for the SQL statements
+    const queryParams = filter && value ? [isExactMatch ? value : `%${value}%`] : [];
     const [categories, [totalCount]] = await Promise.all([
       new Promise((resolve, reject) => {
         connection.query(
-          getcategoriesQuery,
-          [parseInt(limit), offset],
+          getCategoriesQuery,
+          [...queryParams, limit, offset],
           (err, results) => {
             if (err) return reject(err);
             resolve(results);
@@ -50,10 +70,14 @@ router.get("/api/category",isAdmin, async (req, res) => {
         );
       }),
       new Promise((resolve, reject) => {
-        connection.query(countcategoriesQuery, (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        });
+        connection.query(
+          countCategoriesQuery,
+          queryParams,
+          (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
+          }
+        );
       }),
     ]);
 
@@ -72,6 +96,8 @@ router.get("/api/category",isAdmin, async (req, res) => {
     return res.status(500).send("Error fetching categories");
   }
 });
+
+
 
 router.get("/api/category/:id",isAdmin, (req, res) => {
 

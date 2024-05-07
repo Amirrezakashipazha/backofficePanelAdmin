@@ -8,6 +8,8 @@ import sale from "./sale.mjs"
 import authAdmin from "./auth.mjs"
 import admins from "./admins.mjs"
 import setting from "./setting.mjs"
+import getAll from "./getAll.mjs"
+// import notification from "./notification.mjs"
 
 
 const router = Router();
@@ -21,5 +23,7 @@ router.use(sale)
 router.use(authAdmin)
 router.use(admins)
 router.use(setting)
+router.use(getAll)
+// router.use(notification)
 
 export default router;

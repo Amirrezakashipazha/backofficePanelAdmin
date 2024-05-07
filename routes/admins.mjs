@@ -29,21 +29,40 @@ import {
 } from "../utils/deleteFile.mjs";
 
 const router = Router();
+router.get("/api/admins", 
+// isSuperAdmin, 
+async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const page = parseInt(req.query.page) || 1;
+  const { filter, value } = req.query;
 
-router.get("/api/admins", isSuperAdmin, async (req, res) => {
-  const limit = req.query.limit;
-  const page = req.query.page || 1;
+  // Validate filter parameter against allowed fields
+  const validFilters = ['id', 'username', 'role', 'status'];
+  if (filter && !validFilters.includes(filter.toLowerCase())) {
+    return res.status(400).send({ error: "Invalid filter parameter" });
+  }
+
   const offset = (page - 1) * limit;
 
-  const getUsersQuery = `${querySchema.table.admins.get} WHERE role != 'super-admin' LIMIT ? OFFSET ?`;
-  const countUsersQuery = `SELECT COUNT(*) AS count FROM admins WHERE role != 'super-admin'`;
+  // Construct the base query
+  const baseQuery = `FROM admins WHERE role != 'super-admin'`;
+
+  // Adjust query to use exact matching for status, and LIKE for other filters
+  const filterQuery = filter && value ? 
+    (filter.toLowerCase() === 'status' ? ` AND ${filter} = ?` : ` AND ${filter} LIKE ?`) : 
+    '';
+
+  const getUsersQuery = `SELECT * ${baseQuery}${filterQuery} LIMIT ? OFFSET ?`;
+  const countUsersQuery = `SELECT COUNT(*) AS count ${baseQuery}${filterQuery}`;
 
   try {
+    const queryArgs = filter && value ? (filter.toLowerCase() === 'status' ? [value] : [`%${value}%`]) : [];
+
     const [users, [totalCount]] = await Promise.all([
       new Promise((resolve, reject) => {
         connection.query(
           getUsersQuery,
-          [parseInt(limit), offset],
+          [...queryArgs, limit, offset],
           (err, results) => {
             if (err) return reject(err);
             resolve(results);
@@ -51,10 +70,14 @@ router.get("/api/admins", isSuperAdmin, async (req, res) => {
         );
       }),
       new Promise((resolve, reject) => {
-        connection.query(countUsersQuery, (err, results) => {
-          if (err) return reject(err);
-          resolve(results);
-        });
+        connection.query(
+          countUsersQuery,
+          queryArgs,
+          (err, results) => {
+            if (err) return reject(err);
+            resolve(results);
+          }
+        );
       }),
     ]);
 
@@ -73,6 +96,8 @@ router.get("/api/admins", isSuperAdmin, async (req, res) => {
     return res.status(500).send("Error fetching users");
   }
 });
+
+
 
 router.get("/api/admins/:id", isSuperAdmin, (req, res) => {
   const {

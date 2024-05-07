@@ -1,6 +1,14 @@
 import mysql from "mysql2";
 import { query } from "./schemas.mjs";
 
+
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "my_database",
+}).promise();
+
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -97,4 +105,4 @@ connection.connect((err) => {
   });
 });
 
-export { connection };
+export { connection,pool };

@@ -28,29 +28,60 @@ import {
 } from "../utils/deleteFile.mjs";
 
 const router = Router();
-
-router.get("/api/products",isAdmin, async (req, res) => {
-  const limit = req.query.limit;
-  const page = req.query.page || 1;
+router.get("/api/products",
+// isAdmin, 
+async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;  // Set default limit
+  const page = parseInt(req.query.page) || 1;
+  const { filter, value } = req.query;
   const offset = (page - 1) * limit;
 
-  const getUsersQuery = `${querySchema.table.products.get} LIMIT ? OFFSET ?`;
-  const countUsersQuery = `SELECT COUNT(*) AS count FROM products`;
+  const validFilters = {
+    id: 'id',
+    name: 'name',
+    category: 'category',
+    discount: 'discount',
+    totalPrice: 'total_price',
+    number: 'number',
+    status: 'status' // status should use '=' for exact match
+  };
+
+  if (filter && !(filter in validFilters)) {
+    return res.status(400).send({ error: "Invalid filter parameter" });
+  }
+let isExactMatchFilter;
+  let queryCondition = '';
+  if (filter && value) {
+    const column = validFilters[filter];
+    isExactMatchFilter = ['id', 'discount', 'totalPrice', 'number', 'status'].includes(filter); // Include 'status' here
+    queryCondition = ` AND ${column} ${isExactMatchFilter ? '=' : 'LIKE'} ?`;
+  }
+
+  const queryParams = filter && value
+    ? [isExactMatchFilter ? value : `%${value}%`, limit, offset]
+    : [limit, offset];
+
+  const getProductsQuery = `
+    SELECT * FROM products
+    WHERE 1=1${queryCondition}
+    LIMIT ? OFFSET ?`;
+
+  const countProductsQuery = `
+    SELECT COUNT(*) AS count FROM products
+    WHERE 1=1${queryCondition}`;
+  
+  const countParams = filter && value ? [isExactMatchFilter ? value : `%${value}%`] : [];
 
   try {
-    const [users, [totalCount]] = await Promise.all([
+    const [products, [totalCount]] = await Promise.all([
       new Promise((resolve, reject) => {
-        connection.query(
-          getUsersQuery,
-          [parseInt(limit), offset],
-          (err, results) => {
-            if (err) return reject(err);
-            resolve(results);
-          }
-        );
+        connection.query(getProductsQuery, queryParams, (err, results) => {
+          if (err) return reject(err);
+          resolve(results);
+        });
       }),
       new Promise((resolve, reject) => {
-        connection.query(countUsersQuery, (err, results) => {
+        connection.query(countProductsQuery, countParams, (err, results) => {
           if (err) return reject(err);
           resolve(results);
         });
@@ -65,13 +96,14 @@ router.get("/api/products",isAdmin, async (req, res) => {
       pageCount: pageCount,
       itemsPerPage: limit,
       totalItems: totalCount.count,
-      data: users,
+      data: products
     });
   } catch (err) {
-    console.error("Error fetching users:", err);
-    return res.status(500).send("Error fetching users");
+    console.error("Error fetching products:", err);
+    return res.status(500).send("Error fetching products");
   }
 });
+
 
 router.get("/api/products/:id",isAdmin, (req, res) => {
   const {
@@ -84,8 +116,8 @@ router.get("/api/products/:id",isAdmin, (req, res) => {
     [parsedId],
     (err, insertResults) => {
       if (err) {
-        console.error("Error inserting user:", err);
-        return res.status(500).send("Error inserting user");
+        console.error("Error inserting product:", err);
+        return res.status(500).send("Error inserting product");
       }
       return res.status(201).send(insertResults);
     }
@@ -93,7 +125,7 @@ router.get("/api/products/:id",isAdmin, (req, res) => {
 });
 
 router.post("/api/products",isAdmin, upload.array("images", 10), (req, res) => {
-  const { name, price, discount, category, status, description, totalPrice } =
+  const { name, price, discount, category, status, description, totalPrice,number } =
     req.body;
   let images = [];
   if (req.files) {
@@ -115,6 +147,7 @@ router.post("/api/products",isAdmin, upload.array("images", 10), (req, res) => {
       totalPrice,
       status,
       imagesString,
+      number
     ],
     (err, insertResults) => {
       if (err) {
@@ -125,19 +158,6 @@ router.post("/api/products",isAdmin, upload.array("images", 10), (req, res) => {
     }
   );
 });
-function getProductById(productId) {
-  return new Promise((resolve, reject) => {
-    const query = "SELECT * FROM products WHERE id = ?";
-    connection.query(query, [productId], (error, results) => {
-      if (error) {
-        reject(error);
-      } else {
-        // Assuming the ID is unique, there should be at most one product with this ID
-        resolve(results[0]);
-      }
-    });
-  });
-}
 
 router.patch(
   "/api/products/:id",isAdmin,
@@ -204,6 +224,7 @@ router.patch(
         status,
         description,
         totalPrice,
+        number
       } = req.body;
 
       if (name) fieldsToUpdate.name = name;
@@ -213,6 +234,7 @@ router.patch(
       if (status) fieldsToUpdate.status = status;
       if (totalPrice) fieldsToUpdate.total_price = totalPrice;
       if (description) fieldsToUpdate.description = description;
+      if (number) fieldsToUpdate.number = number;
       fieldsToUpdate.image = imagesString;
 
       const setClause = Object.keys(fieldsToUpdate)
@@ -245,8 +267,8 @@ router.delete("/api/products/:id",isAdmin, (req, res) => {
 
   connection.query(
     querySchema.table.products.delete,
-    [parsedId],
-    (err, results) => {
+    [parsedId], 
+    (err, results) => { 
       if (err) {
         console.error("Error deleting user:", err);
         return res.status(500).send("Error deleting user");

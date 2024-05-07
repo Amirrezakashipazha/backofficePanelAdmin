@@ -30,13 +30,15 @@ const query = {
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL UNIQUE,
+            phone VARCHAR(255) NOT NULL,
+            address VARCHAR(255) NOT NULL,
             password VARCHAR(255) NOT NULL ,
             status VARCHAR(255) NOT NULL,
             avatar VARCHAR(255) DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`,
       add: `
-        INSERT INTO users (username, email, password, status, avatar) VALUES (?, ?, ?, ?, ?)
+        INSERT INTO users (username, email,phone,address, password, status, avatar) VALUES (?, ?,?,?, ?, ?, ?)
       `,
       delete: `DELETE FROM users WHERE id = ?`,
       get: `
@@ -59,10 +61,11 @@ const query = {
           total_price INT NOT NULL,
           status VARCHAR(255) NOT NULL,
           image JSON NOT NULL,
+          number INT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
       add: `
-      INSERT INTO products (name, category, description, price, discount, total_price, status, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products (name, category, description, price, discount, total_price, status, image,number) VALUES (?, ?,?, ?, ?, ?, ?, ?, ?)
       `,
       get: `
         SELECT * FROM products
@@ -98,7 +101,18 @@ const query = {
       CREATE TABLE IF NOT EXISTS orders (
           id INT AUTO_INCREMENT PRIMARY KEY,
           user_id INT NOT NULL,
+          user_username VARCHAR(255) NOT NULL,
+          user_email VARCHAR(255) NOT NULL,
+          user_avatar VARCHAR(255) DEFAULT NULL,
+          user_phone VARCHAR(255) NOT NULL,
+          user_address VARCHAR(255) NOT NULL,
           product_id INT NOT NULL,
+          product_name VARCHAR(255) NOT NULL,
+          product_category VARCHAR(255) NOT NULL, 
+          product_description VARCHAR(255) ,
+          product_discount INT DEFAULT 0,
+          product_total_price INT NOT NULL,
+          product_image JSON NOT NULL,
           status  VARCHAR(255) NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
@@ -116,10 +130,28 @@ const query = {
       CREATE TABLE IF NOT EXISTS sale (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
+        user_username VARCHAR(255) NOT NULL,
+        user_email VARCHAR(255) NOT NULL,
+        user_avatar VARCHAR(255) DEFAULT NULL,
+        user_phone VARCHAR(255) NOT NULL,
+        user_address VARCHAR(255) NOT NULL,
         product_id INT NOT NULL,
+        product_name VARCHAR(255) NOT NULL,
+        product_category VARCHAR(255) NOT NULL, 
+        product_description VARCHAR(255) ,
+        product_discount INT DEFAULT 0,
+        product_total_price INT NOT NULL,
+        product_image JSON NOT NULL,
         status  VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
+      get: `
+      SELECT * FROM sale
+    `,
+      delete: `DELETE FROM sale WHERE id = ?`,
+      select: {
+        id: ` SELECT * FROM sale WHERE id = ?`,
+      },
     },
     setting: {
       create: `

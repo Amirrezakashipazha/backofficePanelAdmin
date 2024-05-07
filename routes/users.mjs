@@ -29,49 +29,88 @@ import {
 
 const router = Router();
 
-router.get("/api/users",isAdmin, async (req, res) => {
-  const limit = req.query.limit;
-  const page = req.query.page || 1;
-  const offset = (page - 1) * limit;  
 
-  const getUsersQuery = `${querySchema.table.users.get} LIMIT ? OFFSET ?`;
-  const countUsersQuery = `SELECT COUNT(*) AS count FROM users`;
+router.get("/api/users",
+// isAdmin, 
+async (req, res) => {
+  // Ensure limit is a valid integer, default to 100 if not provided or invalid
+  const limit = parseInt(req.query.limit, 10) || 100;
+  const page = parseInt(req.query.page, 10) || 1;
+  const offset = (page - 1) * limit;
+
+  const { filter, value } = req.query;
+
+  // Valid filters and corresponding database columns
+  const validFilters = {
+    id: 'id',
+    username: 'username',
+    email: 'email',
+    status: 'status'
+  };
+
+  // Validate the filter
+  if (filter && !(filter.toLowerCase() in validFilters)) {
+    return res.status(400).send({ error: "Invalid filter parameter" });
+  }
+
+  let queryCondition = '';
+  let formattedValue = value; // Initialize with value to ensure it is always defined
+
+  if (filter && value) {
+    const column = validFilters[filter];
+    // Use '=' for 'id' and 'status', 'LIKE' for 'username' and 'email'
+    const operator = (filter === 'id' || filter === 'status') ? '=' : 'LIKE';
+    formattedValue = (operator === 'LIKE') ? `%${value}%` : value;
+    queryCondition = ` AND ${column} ${operator} ?`;
+  }
+
+  const getUsersQuery = `
+    SELECT * FROM users
+    WHERE 1=1 ${queryCondition}
+    LIMIT ? OFFSET ?`;
+
+  // Include the formattedValue only if there is a valid filter and value
+  const queryParams = filter && value ? [formattedValue, limit, offset] : [limit, offset];
+
+  const countUsersQuery = `
+    SELECT COUNT(*) AS count FROM users
+    WHERE 1=1 ${queryCondition}`;
+
+  const countParams = filter && value ? [formattedValue] : [];
 
   try {
-    const [users, [totalCount]] = await Promise.all([
+    const [users, totalCount] = await Promise.all([
       new Promise((resolve, reject) => {
-        connection.query(
-          getUsersQuery,
-          [parseInt(limit), offset],
-          (err, results) => {
-            if (err) return reject(err);
-            resolve(results);
-          }
-        );
-      }),
-      new Promise((resolve, reject) => {
-        connection.query(countUsersQuery, (err, results) => {
+        connection.query(getUsersQuery, queryParams, (err, results) => {
           if (err) return reject(err);
           resolve(results);
         });
       }),
+      new Promise((resolve, reject) => {
+        connection.query(countUsersQuery, countParams, (err, results) => {
+          if (err) return reject(err);
+          resolve(results[0].count);  // resolve the count directly
+        });
+      }),
     ]);
+    
 
-    const pageCount = Math.ceil(totalCount.count / limit);
+    const pageCount = Math.ceil(totalCount / limit);
 
     return res.status(200).send({
       object: "list",
       page: page,
       pageCount: pageCount,
       itemsPerPage: limit,
-      totalItems: totalCount.count,
-      data: users,
+      totalItems: totalCount,
+      data: users
     });
   } catch (err) {
     console.error("Error fetching users:", err);
     return res.status(500).send("Error fetching users");
   }
 });
+
 
 router.get("/api/users/:id",isAdmin, (req, res) => {
   const {
@@ -93,7 +132,7 @@ router.get("/api/users/:id",isAdmin, (req, res) => {
 });
 
 router.post("/api/users",isAdmin, upload.single("avatar"), (req, res) => {
-  const { username, email, password, status } = req.body;
+  const { username, email, password, status ,phone, address} = req.body;
 
   let avatar = req.file
     ? `http://localhost:3000/${req.file.path}`
@@ -112,7 +151,7 @@ router.post("/api/users",isAdmin, upload.single("avatar"), (req, res) => {
       }
       connection.query(
         querySchema.table.users.add,
-        [username, email, password, status, avatar],
+        [username, email, phone,address,password, status, avatar],
         (err, insertResults) => {
           if (err) {
             console.error("Error inserting user:", err);
@@ -130,9 +169,11 @@ router.patch("/api/users/:id",isAdmin, upload.single("avatar"), (req, res) => {
   const parsedId = parseInt(id);
   if (isNaN(parsedId)) return res.sendStatus(400);
   let fieldsToUpdate = {};
-  const { username, email, password, status } = req.body;
+  const { username, email, password, status,phone,address } = req.body;
   if (username) fieldsToUpdate.username = username;
   if (email) fieldsToUpdate.email = email;
+  if (phone) fieldsToUpdate.phone = phone;
+  if (address) fieldsToUpdate.address = address;
   if (password) fieldsToUpdate.password = password;
   if (status) fieldsToUpdate.status = status;
   if (req.file)
