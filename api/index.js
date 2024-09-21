@@ -16,7 +16,7 @@ app.use("/uploads", express.static("uploads"));
 
 app.use(
     cors({
-      origin: "https://web-backoffice-panel-amin-m75q.vercel.app", // No trailing slash
+      origin: "https://web-backoffice-panel-amin.vercel.app/", // No trailing slash
       credentials: true,
     })
   );
