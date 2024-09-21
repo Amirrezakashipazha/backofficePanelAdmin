@@ -15,12 +15,15 @@ app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
 app.use(
-    cors({
-      origin: "https://web-backoffice-panel-amin.vercel.app/", // No trailing slash
-      credentials: true,
-    })
-  );
-  
+  cors({
+    origin: [
+      "https://web-backoffice-panel-amin.vercel.app",
+      "https://web-backoffice-panel-a-git-37b288-amirreza-kashipazhas-projects.vercel.app",
+      "https://web-backoffice-panel-amin-59r9w7c50.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 
 app.use(
   session({
