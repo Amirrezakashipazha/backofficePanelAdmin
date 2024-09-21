@@ -5,7 +5,7 @@ import { pool } from "../db/index.mjs";
 const router = Router();
 
 
-router.get("/api/all",  async (req, res) => {
+router.get("/api/all",isAdmin,  async (req, res) => {
     try {
         const tables = ['admins', 'users', 'products', 'categories', 'orders', 'sale', 'setting'];
         const results = await Promise.all(

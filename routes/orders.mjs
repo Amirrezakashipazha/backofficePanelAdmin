@@ -35,7 +35,7 @@ import axios from "axios";
 // Now you can use io to emit events, etc.
 
 const router = Router();
-router.get("/api/order", async (req, res) => {
+router.get("/api/order",isAdmin, async (req, res) => {
   const limit = parseInt(req.query.limit) || 1000;
   const page = parseInt(req.query.page) || 1;
   const { filter, value } = req.query;

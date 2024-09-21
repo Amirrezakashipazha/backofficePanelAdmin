@@ -30,7 +30,7 @@ import {
 
 const router = Router();
 router.get("/api/admins", 
-// isSuperAdmin, 
+isSuperAdmin, 
 async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const page = parseInt(req.query.page) || 1;
@@ -124,7 +124,6 @@ router.post(
   upload.single("avatar"),
   (req, res) => {
     const { username, password, status } = req.body;
-    console.log(req.file);
     let avatar = req.file
       ? `http://localhost:3000/${req.file.path}`
       : "http://localhost:3000/assets/images/svg/no-avatar.svg";

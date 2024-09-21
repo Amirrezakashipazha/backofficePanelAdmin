@@ -29,7 +29,7 @@ import {
 
 const router = Router();
 router.get("/api/products",
-// isAdmin, 
+isAdmin, 
 async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;  // Set default limit
   const page = parseInt(req.query.page) || 1;

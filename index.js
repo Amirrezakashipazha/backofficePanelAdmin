@@ -50,18 +50,26 @@ app.use(express.static("public"));
 
 app.use("/uploads", express.static("uploads"));
 
+app.use(
+  cors({
+    origin: "http://localhost:4173", // Specify the exact origin you want to allow
+    credentials: true, // Enable credentials to allow cookies, session, etc.
+  })
+);
+
+
 // app.use(cors()); // بزند request ها origin برای اینکه بتواند از تمامی
 // app.use(cors({
 //   origin: ['http://localhost:5599'], // Replace with the actual origin of your client app
 //   credentials: true, // To allow sending of cookies and authentication information
 // }));
 
-app.use(
-  cors({
-    origin: "http://localhost:5173", // Adjust as necessary
-    credentials: true, // Crucial for cookies to be sent
-  })
-);
+// app.use(
+//   cors({
+//     origin: "http://localhost:5173", // Adjust as necessary
+//     credentials: false, // Crucial for cookies to be sent
+//   })
+// );
 
 // const seenIPs = new Set();
 // let uniqueVisits = 0;
