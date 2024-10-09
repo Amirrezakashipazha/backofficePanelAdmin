@@ -25,23 +25,24 @@ app.use("/uploads", express.static("uploads"));
 //   })
 // );
 
-app.use(cors());
+// app.use(cors());
+app.options('*', cors()); // Allow all preflight requests
 
-app.use(
-  session({
-    secret: "PanelAdminSession",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: "Lax",
-      secure: false,
-      maxAge: 60000 * 60,
-    },
-  })
-);
+// app.use(
+//   session({
+//     secret: "PanelAdminSession",
+//     resave: false,
+//     saveUninitialized: false,
+//     cookie: {
+//       httpOnly: true,
+//       sameSite: "Lax",
+//       secure: false,
+//       maxAge: 60000 * 60,
+//     },
+//   })
+// );
 
-app.use(cookieParser("secret"));
+// app.use(cookieParser("secret"));
 app.use(AllRoutes);
 
 // Export the app so Vercel can handle the serverless function
