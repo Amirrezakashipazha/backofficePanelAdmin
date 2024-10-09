@@ -1,4 +1,3 @@
-// api/index.js
 import express from "express";
 import AllRoutes from "../routes/index.mjs"; // Adjust the path
 import cookieParser from "cookie-parser";
@@ -14,15 +13,17 @@ app.use(express.json());
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
+// CORS configuration
 app.use(
   cors({
-    origin: "https://web-backoffice-panel-amin.vercel.app",
+    origin: "https://web-backoffice-panel-amin.vercel.app", // Make sure this matches exactly
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Add allowed methods
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Add any custom headers
+    credentials: true, // Required if using credentials (cookies, sessions)
   })
 );
 
-// app.use(cors());
-// app.options('*', cors()); // Allow all preflight requests
-
+// session setup
 app.use(
   session({
     secret: "PanelAdminSession",
@@ -31,7 +32,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "Lax",
-      secure: false,
+      secure: true, // Set to true for HTTPS in production
       maxAge: 60000 * 60,
     },
   })

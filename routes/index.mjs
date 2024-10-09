@@ -1,14 +1,14 @@
 import { Router } from "express";
-import user from "./users.mjs"
-import auth from "./auth.mjs"
-import products from "./products.mjs"
-import category from "./category.mjs"
-import orders from "./orders.mjs"
-import sale from "./sale.mjs"
-import authAdmin from "./auth.mjs"
-import admins from "./admins.mjs"
-import setting from "./setting.mjs"
-import getAll from "./getAll.mjs"
+import user from "./users.mjs";
+import auth from "./auth.mjs";
+import products from "./products.mjs";
+import category from "./category.mjs";
+import orders from "./orders.mjs";
+import sale from "./sale.mjs";
+import authAdmin from "./auth.mjs";
+import admins from "./admins.mjs";
+import setting from "./setting.mjs";
+import getAll from "./getAll.mjs";
 // import notification from "./notification.mjs"
 
 

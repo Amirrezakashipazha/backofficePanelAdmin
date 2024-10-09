@@ -1,31 +1,10 @@
-import express from "express";
-import {
-  query,
-  body,
-  validationResult,
-  matchedData,
-  checkSchema,
-} from "express-validator";
-import { validationSchema } from "../utils/validationSchemas.mjs";
 
 import { Router } from "express";
 import {
-  Midlewar,
-  MidlewarAuth,
-  MidlewarCheck,
-  isAdmin,
+  isAdmin
 } from "../utils/middlewares.mjs";
-import data from "../utils/fakedb.mjs";
-import { query as querySchema } from "../db/schemas.mjs";
 import { connection } from "../db/index.mjs";
-import { upload } from "../utils/multer.mjs";
 
-import {
-  __dirname,
-  deleteFile,
-  listFiles,
-  path,
-} from "../utils/deleteFile.mjs";
 import axios from "axios";
 // import { HandleNotification } from "../utils/notification.mjs";
 // import { getIo } from "../utils/socket.mjs";
